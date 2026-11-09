@@ -23,13 +23,14 @@
     --hot: #ff6b6b;
     --glow: rgba(124,92,255,0.45);
     --ring-track: rgba(255,255,255,0.06);
+    --cost-grad: linear-gradient(90deg, #ffffff, #cfd4ff);
     --radius: 18px;
     --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
 
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
+  html { min-height: 100%; }
   body {
     margin: 0;
     font-family: var(--sans);
@@ -55,357 +56,203 @@
     gap: 28px;
   }
 
-  header {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    text-align: center;
-  }
-  header h1 {
-    margin: 0;
-    font-size: clamp(1.4rem, 2.5vw, 1.9rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-  }
-  header p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.95rem;
-  }
+  header { display: flex; flex-direction: column; gap: 6px; text-align: center; }
+  header h1 { margin: 0; font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
 
-  .layout {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
-    align-items: start;
-  }
-  @media (min-width: 820px) {
-    .layout { grid-template-columns: 1.3fr 1fr; gap: 32px; }
-  }
+  .layout { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+  @media (min-width: 820px) { .layout { grid-template-columns: 1.3fr 1fr; gap: 32px; } }
 
   /* ---------- Ring ---------- */
-  .stage {
-    position: relative;
-    display: grid;
-    place-items: center;
-    padding: 12px 0;
-  }
-  .ring-wrap {
-    position: relative;
-    width: min(78vw, 420px);
-    aspect-ratio: 1;
-    display: grid;
-    place-items: center;
-  }
+  .stage { position: relative; display: grid; place-items: center; padding: 12px 0; gap: 0; }
+  .ring-wrap { position: relative; width: min(78vw, 420px); aspect-ratio: 1; display: grid; place-items: center; }
   .ring-wrap::before {
-    content: "";
-    position: absolute;
-    inset: 8%;
-    border-radius: 50%;
+    content: ""; position: absolute; inset: 8%; border-radius: 50%;
     background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
-    filter: blur(28px);
-    opacity: 0;
-    transition: opacity 0.6s ease;
-    pointer-events: none;
+    filter: blur(28px); opacity: 0; transition: opacity 0.6s ease; pointer-events: none;
   }
   .running .ring-wrap::before { opacity: 0.9; animation: breathe 3.2s ease-in-out infinite; }
-  @keyframes breathe {
-    0%, 100% { transform: scale(0.96); opacity: 0.7; }
-    50% { transform: scale(1.04); opacity: 1; }
-  }
+  .running.over .ring-wrap::before { animation-duration: 1.4s; }
+  @keyframes breathe { 0%, 100% { transform: scale(0.96); opacity: 0.7; } 50% { transform: scale(1.04); opacity: 1; } }
 
   svg.ring { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
   .ring .track { fill: none; stroke: var(--ring-track); stroke-width: 10; }
   .ring .progress {
-    fill: none;
-    stroke: url(#grad);
-    stroke-width: 10;
-    stroke-linecap: round;
-    filter: drop-shadow(0 0 6px var(--glow));
-    transition: stroke-dashoffset 0.12s linear;
+    fill: none; stroke: url(#grad); stroke-width: 10; stroke-linecap: round;
+    filter: drop-shadow(0 0 6px var(--glow)); transition: stroke-dashoffset 0.12s linear;
   }
-  .ring .tick {
-    stroke: rgba(255,255,255,0.14);
-    stroke-width: 2;
-  }
-  .ring .head {
-    fill: #fff;
-    filter: drop-shadow(0 0 8px var(--accent-2));
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
+  .ring .tick { stroke: rgba(255,255,255,0.14); stroke-width: 2; }
+  .ring .head { fill: #fff; filter: drop-shadow(0 0 8px var(--accent-2)); opacity: 0; transition: opacity 0.3s; }
   .running .ring .head { opacity: 1; }
 
   .readout {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    text-align: center;
-    padding: 0 14%;
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; text-align: center; padding: 0 14%;
   }
   .readout .cost {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: clamp(1.9rem, 7.5vw, 3.1rem);
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    font-variant-numeric: tabular-nums;
-    background: linear-gradient(90deg, #ffffff, #cfd4ff);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .readout .cost.hot {
-    background: linear-gradient(90deg, #fff, #ffb3b3);
-    -webkit-background-clip: text;
-    background-clip: text;
+    font-family: var(--mono); font-weight: 700; font-size: clamp(1.9rem, 7.5vw, 3.1rem);
+    letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums;
+    background: var(--cost-grad); -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .readout .unit { color: var(--muted); font-size: 0.85rem; margin-top: -2px; }
   .readout .time {
-    font-family: var(--mono);
-    font-size: clamp(1.05rem, 3.2vw, 1.35rem);
-    font-weight: 500;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.02em;
-    margin-top: 6px;
+    font-family: var(--mono); font-size: clamp(1.05rem, 3.2vw, 1.35rem); font-weight: 500; color: var(--muted);
+    font-variant-numeric: tabular-nums; letter-spacing: 0.02em; margin-top: 6px;
   }
-  .readout .rate {
-    font-size: 0.78rem;
-    color: var(--muted);
-    opacity: 0.8;
-  }
+  .readout .plan { font-family: var(--mono); font-size: 0.74rem; color: var(--muted); font-variant-numeric: tabular-nums; display: none; }
+  .planned .readout .plan { display: block; }
+  .over .readout .plan { color: #ffb3b3; }
+  .readout .rate { font-size: 0.78rem; color: var(--muted); opacity: 0.8; margin-top: 2px; }
 
   .pulse { animation: pop 0.35s cubic-bezier(.2,.8,.2,1); }
   @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
-  /* ---------- Controls ---------- */
-  .controls {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 18px;
+  .compare {
+    margin-top: 14px; min-height: 1.4em; color: var(--muted); font-size: 0.9rem; text-align: center;
+    transition: opacity 0.35s ease; opacity: 1; padding: 0 12px;
   }
+  .compare.fade { opacity: 0; }
+  .compare strong { color: var(--text); font-weight: 600; }
+
+  /* ---------- Controls ---------- */
+  .controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .controls.secondary { margin-top: 10px; }
   button {
-    font: inherit;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    border-radius: 999px;
-    padding: 12px 22px;
-    font-weight: 600;
-    min-width: 128px;
-    min-height: 44px;
+    font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    border-radius: 999px; padding: 12px 22px; font-weight: 600; min-width: 128px; min-height: 44px;
     transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
   button:hover { background: var(--surface-2); transform: translateY(-1px); }
   button:active { transform: translateY(0) scale(0.98); }
   button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
-  button.primary {
-    background: linear-gradient(135deg, var(--accent), #5b3df5);
-    border-color: transparent;
-    box-shadow: 0 8px 24px -8px var(--glow);
-  }
+  button.primary { background: linear-gradient(135deg, var(--accent), #5b3df5); border-color: transparent; box-shadow: 0 8px 24px -8px var(--glow); }
   button.primary:hover { box-shadow: 0 12px 30px -8px var(--glow); }
   button.primary.pause { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 8px 24px -8px rgba(245,158,11,0.5); }
   button.ghost { background: transparent; }
+  button.small { min-width: 0; min-height: 38px; padding: 8px 16px; font-size: 0.88rem; font-weight: 500; }
   button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   /* ---------- Panel ---------- */
   .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
-    backdrop-filter: blur(10px);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+    display: flex; flex-direction: column; gap: 22px; backdrop-filter: blur(10px);
   }
-  .panel h2 {
-    margin: 0;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    font-weight: 600;
-  }
+  .panel h2, .log h2 { margin: 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; }
   .field { display: flex; flex-direction: column; gap: 10px; }
   .field-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .field label { font-weight: 500; font-size: 0.95rem; }
-  .field .value {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: 1.1rem;
-    font-variant-numeric: tabular-nums;
-  }
+  .field .sub { color: var(--muted); font-size: 0.78rem; }
+  .field .value { font-family: var(--mono); font-weight: 700; font-size: 1.1rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .field .value small { font-family: var(--sans); font-weight: 500; color: var(--muted); font-size: 0.8rem; margin-left: 4px; }
 
   .stepper { display: flex; align-items: center; gap: 10px; }
   .stepper button { min-width: 44px; width: 44px; padding: 0; border-radius: 12px; font-size: 1.2rem; line-height: 1; }
   .stepper input[type="number"] {
-    flex: 1;
-    min-width: 0;
-    font: inherit;
-    font-family: var(--mono);
-    font-weight: 600;
-    font-size: 1.05rem;
-    text-align: center;
-    padding: 10px 12px;
-    color: var(--text);
-    background: var(--bg-2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    -moz-appearance: textfield;
-    appearance: textfield;
+    flex: 1; min-width: 0; font: inherit; font-family: var(--mono); font-weight: 600; font-size: 1.05rem; text-align: center;
+    padding: 10px 12px; color: var(--text); background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px;
+    -moz-appearance: textfield; appearance: textfield;
   }
-  .stepper input::-webkit-outer-spin-button,
-  .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .stepper input:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); height: 32px; cursor: pointer; }
 
-  input[type="range"] {
-    width: 100%;
-    accent-color: var(--accent);
-    height: 32px;
-    cursor: pointer;
-  }
-
-  .stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  .stat {
-    background: var(--bg-2);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 12px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
   .stat .k { color: var(--muted); font-size: 0.75rem; }
   .stat .v { font-family: var(--mono); font-weight: 600; font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .stat .v.good { color: #7ee2b8; }
 
-  .hint {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.82rem;
-    line-height: 1.5;
-    border-top: 1px solid var(--border);
-    padding-top: 16px;
-  }
+  .hint { margin: 0; color: var(--muted); font-size: 0.82rem; line-height: 1.5; border-top: 1px solid var(--border); padding-top: 16px; }
   .hint strong { color: var(--text); font-weight: 600; }
 
-  footer {
-    text-align: center;
-    color: var(--muted);
-    font-size: 0.78rem;
-    padding: 0 16px 24px;
-  }
-  footer kbd {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 2px 6px;
-  }
-
   /* ---------- OB mode ---------- */
-  .ob {
-    --accent: #ff7a3d;
-    --accent-2: #ffb347;
-    --glow: rgba(255,122,61,0.5);
-  }
+  .ob { --accent: #ff7a3d; --accent-2: #ffb347; --glow: rgba(255,122,61,0.5); --cost-grad: linear-gradient(90deg, #ffffff, #ffd9b8); }
   .ob .ring .progress { stroke: url(#grad-ob); }
-  .ob .readout .cost {
-    background: linear-gradient(90deg, #ffffff, #ffd9b8);
-    -webkit-background-clip: text;
-    background-clip: text;
-  }
   .ob button.primary { background: linear-gradient(135deg, #ff7a3d, #e4541f); }
   .ob button.primary.pause { background: linear-gradient(135deg, #f59e0b, #d97706); }
   .ob input[type="range"] { accent-color: #ff7a3d; }
 
+  /* ---------- Over budget ---------- */
+  .over { --accent: #ff4d6d; --accent-2: #ff8fa3; --glow: rgba(255,77,109,0.55); --cost-grad: linear-gradient(90deg, #ffffff, #ffb3c1); }
+  .over .ring .progress { stroke: url(#grad-over); }
+  .over .ring .track { stroke: rgba(255,77,109,0.18); }
+
   .badge {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #ffd9b8;
-    background: rgba(255,122,61,0.16);
-    border: 1px solid rgba(255,122,61,0.4);
+    display: none; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 10px; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #ffd9b8; background: rgba(255,122,61,0.16); border: 1px solid rgba(255,122,61,0.4);
   }
-  .badge::before {
-    content: "";
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #ff7a3d;
-    box-shadow: 0 0 8px #ff7a3d;
-  }
+  .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #ff7a3d; box-shadow: 0 0 8px #ff7a3d; }
   .ob .badge { display: inline-flex; animation: pop 0.35s cubic-bezier(.2,.8,.2,1); }
 
-  .toggle-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
   .toggle-row .label-group { display: flex; flex-direction: column; gap: 2px; }
-  .toggle-row .sub { color: var(--muted); font-size: 0.78rem; }
   .switch {
-    position: relative;
-    width: 52px; height: 30px;
-    flex: none;
-    border-radius: 999px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    padding: 0;
-    min-width: 0; min-height: 0;
+    position: relative; width: 52px; height: 30px; flex: none; border-radius: 999px; background: var(--surface-2);
+    border: 1px solid var(--border); cursor: pointer; padding: 0; min-width: 0; min-height: 0;
     transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
   }
   .switch::after {
-    content: "";
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    background: #fff;
+    content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff;
     transition: transform 0.25s cubic-bezier(.2,.8,.2,1);
   }
   .switch:hover { transform: none; }
-  .switch[aria-checked="true"] {
-    background: linear-gradient(135deg, #ff7a3d, #e4541f);
-    border-color: transparent;
-    box-shadow: 0 0 16px -2px rgba(255,122,61,0.6);
-  }
+  .switch[aria-checked="true"] { background: linear-gradient(135deg, #ff7a3d, #e4541f); border-color: transparent; box-shadow: 0 0 16px -2px rgba(255,122,61,0.6); }
   .switch[aria-checked="true"]::after { transform: translateX(22px); }
-
-  .ob-fields {
-    display: flex; flex-direction: column; gap: 10px;
-    transition: opacity 0.25s;
-  }
+  .ob-fields { display: flex; flex-direction: column; gap: 10px; transition: opacity 0.25s; }
   .ob-fields.off { opacity: 0.4; pointer-events: none; }
+
+  /* ---------- Log ---------- */
+  .log {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+    display: flex; flex-direction: column; gap: 18px; backdrop-filter: blur(10px);
+  }
+  .log-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .log-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .totals { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 640px) { .totals { grid-template-columns: repeat(4, 1fr); } }
+  .totals .stat .v { font-size: 1.15rem; }
+  .totals .stat .n { color: var(--muted); font-size: 0.72rem; }
+
+  .entries { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .entry {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; align-items: center;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  @media (min-width: 640px) { .entry { grid-template-columns: 1fr auto auto; } }
+  .entry.email { border-color: rgba(126,226,184,0.35); background: rgba(126,226,184,0.05); }
+  .e-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .e-date { font-weight: 600; font-size: 0.92rem; }
+  .e-meta { color: var(--muted); font-size: 0.78rem; }
+  .entry.email .e-meta::after { content: " · kunde ha varit ett mejl"; color: #7ee2b8; }
+  .e-cost { font-family: var(--mono); font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .e-actions { display: flex; gap: 6px; grid-column: 1 / -1; justify-content: flex-end; }
+  @media (min-width: 640px) { .e-actions { grid-column: auto; } }
+  .icon-btn { min-width: 36px; width: 36px; min-height: 36px; height: 36px; padding: 0; border-radius: 10px; font-size: 1rem; line-height: 1; display: grid; place-items: center; }
+  .icon-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-btn.mail[aria-pressed="true"] { background: rgba(126,226,184,0.18); border-color: rgba(126,226,184,0.5); color: #7ee2b8; }
+  .icon-btn.danger:hover { background: rgba(255,77,109,0.15); border-color: rgba(255,77,109,0.4); color: #ff8fa3; }
+  .empty { margin: 0; color: var(--muted); font-size: 0.9rem; text-align: center; padding: 18px 0 6px; line-height: 1.5; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px);
+    background: #1a1e2e; color: var(--text); border: 1px solid var(--border); border-radius: 999px;
+    padding: 10px 18px; font-size: 0.9rem; font-weight: 500; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.6); z-index: 10; max-width: calc(100vw - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 0 16px 24px; line-height: 1.8; }
+  footer kbd { font-family: var(--mono); font-size: 0.72rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px; }
 
   @media (prefers-reduced-motion: reduce) {
     .running .ring-wrap::before { animation: none; }
     .pulse { animation: none; }
     .ring .progress { transition: none; }
     .ob .badge { animation: none; }
-    .switch, .switch::after { transition: none; }
+    .switch, .switch::after, .compare, .toast { transition: none; }
   }
 </style>
 </head>
@@ -422,14 +269,13 @@
         <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
           <defs>
             <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#22d3ee"/>
-              <stop offset="55%" stop-color="#7c5cff"/>
-              <stop offset="100%" stop-color="#ff6b9d"/>
+              <stop offset="0%" stop-color="#22d3ee"/><stop offset="55%" stop-color="#7c5cff"/><stop offset="100%" stop-color="#ff6b9d"/>
             </linearGradient>
             <linearGradient id="grad-ob" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#ffd166"/>
-              <stop offset="55%" stop-color="#ff7a3d"/>
-              <stop offset="100%" stop-color="#ff3d6e"/>
+              <stop offset="0%" stop-color="#ffd166"/><stop offset="55%" stop-color="#ff7a3d"/><stop offset="100%" stop-color="#ff3d6e"/>
+            </linearGradient>
+            <linearGradient id="grad-over" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff8fa3"/><stop offset="55%" stop-color="#ff4d6d"/><stop offset="100%" stop-color="#c81d4a"/>
             </linearGradient>
           </defs>
           <g id="ticks"></g>
@@ -441,6 +287,7 @@
           <div class="cost" id="cost" aria-live="polite">0 kr</div>
           <div class="unit">hittills</div>
           <div class="time" id="time">00:00:00</div>
+          <div class="plan" id="plan"></div>
           <div class="rate" id="rate"></div>
           <div class="badge" id="obBadge">OB +50 %</div>
         </div>
@@ -448,8 +295,13 @@
 
       <div class="controls">
         <button class="primary" id="toggle" type="button">Starta</button>
+        <button id="end" type="button" disabled>Avsluta</button>
         <button class="ghost" id="reset" type="button" disabled>Återställ</button>
       </div>
+      <div class="controls secondary">
+        <button class="ghost small" id="share" type="button" disabled>Dela sammanfattning</button>
+      </div>
+      <p class="compare" id="compare" aria-live="polite"></p>
     </section>
 
     <aside class="panel" aria-label="Inställningar">
@@ -482,6 +334,22 @@
       </div>
 
       <div class="field">
+        <div class="field-head">
+          <div>
+            <label for="planned">Planerad längd</label>
+            <div class="sub" id="budgetSub">Ingen budget. Ringen fyller ett varv per timme.</div>
+          </div>
+          <div class="value" id="plannedValue">Av</div>
+        </div>
+        <div class="stepper">
+          <button type="button" data-step="planned" data-delta="-5" aria-label="Kortare planerad längd">−</button>
+          <input type="number" id="planned" min="0" max="600" step="5" value="0" inputmode="numeric" placeholder="0 = av">
+          <button type="button" data-step="planned" data-delta="5" aria-label="Längre planerad längd">+</button>
+        </div>
+        <input type="range" id="plannedRange" min="0" max="180" step="5" value="0" aria-label="Planerad längd (reglage)">
+      </div>
+
+      <div class="field">
         <div class="toggle-row">
           <div class="label-group">
             <label for="obToggle">OB-tid</label>
@@ -507,8 +375,10 @@
         <div class="stat"><span class="k">Per minut</span><span class="v" id="perMinute">–</span></div>
         <div class="stat"><span class="k">Per timme</span><span class="v" id="perHour">–</span></div>
         <div class="stat"><span class="k">Per person hittills</span><span class="v" id="perPerson">–</span></div>
-        <div class="stat"><span class="k">Varv på ringen</span><span class="v" id="laps">0</span></div>
+        <div class="stat"><span class="k" id="fourthLabel">Varv på ringen</span><span class="v" id="fourthValue">0</span></div>
       </div>
+
+      <button type="button" class="ghost small" id="copyLink">Kopiera länk med inställningarna</button>
 
       <p class="hint">
         <strong>Tips:</strong> Timkostnad ≈ månadslön × 1,4 (arbetsgivaravgift och overhead) ÷ 160 timmar.
@@ -517,61 +387,148 @@
       </p>
     </aside>
   </main>
+
+  <section class="log" aria-label="Möteslogg">
+    <div class="log-head">
+      <h2>Möteslogg</h2>
+      <div class="log-actions">
+        <button type="button" class="ghost small" id="exportCsv" disabled>Exportera CSV</button>
+        <button type="button" class="ghost small" id="clearLog" disabled>Rensa</button>
+      </div>
+    </div>
+    <div class="totals">
+      <div class="stat"><span class="k">Denna vecka</span><span class="v" id="totWeek">0 kr</span><span class="n" id="totWeekN"></span></div>
+      <div class="stat"><span class="k">Denna månad</span><span class="v" id="totMonth">0 kr</span><span class="n" id="totMonthN"></span></div>
+      <div class="stat"><span class="k">Totalt</span><span class="v" id="totAll">0 kr</span><span class="n" id="totAllN"></span></div>
+      <div class="stat"><span class="k">Kunde ha sparats</span><span class="v good" id="totEmail">0 kr</span><span class="n" id="totEmailN"></span></div>
+    </div>
+    <ul class="entries" id="entries"></ul>
+    <p class="empty" id="empty">Inga sparade möten ännu. Tryck <strong>Avsluta</strong> när mötet är slut så hamnar det här,<br>och markera det med kuvertet om det kunde ha varit ett mejl.</p>
+  </section>
 </div>
-<footer>Ett varv på ringen = en timme. <kbd>Mellanslag</kbd> startar/pausar, <kbd>R</kbd> återställer, <kbd>O</kbd> växlar OB-tid. Detta kunde ha varit ett mejl.</footer>
+<footer>
+  Ett varv på ringen = en timme, eller den planerade längden om du satt en.<br>
+  <kbd>Mellanslag</kbd> start/paus · <kbd>E</kbd> avsluta · <kbd>R</kbd> återställ · <kbd>O</kbd> OB-tid · <kbd>D</kbd> dela. Detta kunde ha varit ett mejl.
+</footer>
+<div class="toast" id="toast" role="status"></div>
 
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
   const app = $('app');
   const els = {
-    cost: $('cost'), time: $('time'), rate: $('rate'),
+    cost: $('cost'), time: $('time'), plan: $('plan'), rate: $('rate'), compare: $('compare'),
     progress: $('progress'), head: $('head'),
-    toggle: $('toggle'), reset: $('reset'),
+    toggle: $('toggle'), end: $('end'), reset: $('reset'), share: $('share'), copyLink: $('copyLink'),
     people: $('people'), peopleRange: $('peopleRange'), peopleValue: $('peopleValue'),
     hourly: $('hourly'), hourlyRange: $('hourlyRange'), hourlyValue: $('hourlyValue'),
-    perMinute: $('perMinute'), perHour: $('perHour'), perPerson: $('perPerson'), laps: $('laps'),
+    planned: $('planned'), plannedRange: $('plannedRange'), plannedValue: $('plannedValue'), budgetSub: $('budgetSub'),
+    perMinute: $('perMinute'), perHour: $('perHour'), perPerson: $('perPerson'),
+    fourthLabel: $('fourthLabel'), fourthValue: $('fourthValue'),
     obToggle: $('obToggle'), obFields: $('obFields'), obPct: $('obPct'), obPctRange: $('obPctRange'),
     obPctValue: $('obPctValue'), obBadge: $('obBadge'),
+    entries: $('entries'), empty: $('empty'), exportCsv: $('exportCsv'), clearLog: $('clearLog'),
+    totWeek: $('totWeek'), totMonth: $('totMonth'), totAll: $('totAll'), totEmail: $('totEmail'),
+    totWeekN: $('totWeekN'), totMonthN: $('totMonthN'), totAllN: $('totAllN'), totEmailN: $('totEmailN'),
+    toast: $('toast'),
   };
 
   const R = 88;
   const CIRC = 2 * Math.PI * R;
   const HOUR_MS = 3600 * 1000;
-  const STORAGE_KEY = 'meeting-cost:v1';
+  const MIN_MS = 60 * 1000;
+  const SETTINGS_KEY = 'meeting-cost:v2';
+  const LOG_KEY = 'meeting-cost:log';
 
   const fmtKr = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 });
   const fmtInt = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 });
+  const fmtDate = new Intl.DateTimeFormat('sv-SE', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const fmtIsoDate = (d) => new Date(d).toLocaleDateString('sv-SE');
+  const fmtClock = (d) => new Date(d).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
   const state = {
-    people: 6,
-    hourly: 800,
-    ob: false,
-    obPct: 50,
+    people: 6, hourly: 800, ob: false, obPct: 50, planned: 0,
     running: false,
-    accumulated: 0,   // ms accumulated before current run
-    costAccum: 0,     // kr accumulated before current settings change
-    startedAt: 0,     // performance.now() at (re)start
-    displayedCost: 0,
-    lastHour: 0,
+    accumulated: 0, costAccum: 0, startedAt: 0, wallStart: 0,
+    displayedCost: 0, lastLap: 0, wasOver: false,
   };
+  let log = [];
+
+  // ---------- comparisons ----------
+  const COMPARISONS = [
+    { price: 45, one: 'kopp kaffe', many: 'koppar kaffe' },
+    { price: 130, one: 'pizza', many: 'pizzor' },
+    { price: 139, one: 'månad Spotify', many: 'månader Spotify' },
+    { price: 145, one: 'lunch ute', many: 'luncher ute' },
+    { price: 165, one: 'biobiljett', many: 'biobiljetter' },
+    { price: 199, one: 'månad Netflix', many: 'månader Netflix' },
+    { price: 650, one: 'taxi till Arlanda', many: 'taxiresor till Arlanda' },
+    { price: 1070, one: 'SL-månadskort', many: 'SL-månadskort' },
+    { price: 2990, one: 'par AirPods Pro', many: 'par AirPods Pro' },
+    { price: 4500, one: 'spahelg', many: 'spahelger' },
+    { price: 12000, one: 'iPhone', many: 'iPhones' },
+    { price: 14000, one: 'MacBook Air', many: 'MacBook Air' },
+    { price: 18000, one: 'vecka i Thailand', many: 'veckor i Thailand' },
+  ];
+  let compareIdx = 0;
+  let compareTimer = 0;
+
+  function comparisonFor(cost, idx) {
+    const eligible = COMPARISONS.filter((c) => cost / c.price >= 1);
+    if (!eligible.length) return cost > 0 ? 'Inte ens en kopp kaffe ännu.' : '';
+    // Prefer items that give a readable count (1–60), fall back to anything eligible.
+    const nice = eligible.filter((c) => cost / c.price <= 60);
+    const pool = nice.length ? nice : eligible.slice(-3);
+    const c = pool[idx % pool.length];
+    const n = Math.floor(cost / c.price);
+    return `≈ ${fmtInt.format(n)} ${n === 1 ? c.one : c.many}`;
+  }
+  function renderCompare(force) {
+    const text = comparisonFor(currentCost(), compareIdx);
+    if (!force && els.compare.dataset.text === text) return;
+    els.compare.dataset.text = text;
+    els.compare.classList.add('fade');
+    setTimeout(() => {
+      els.compare.innerHTML = text ? text.replace(/^≈ (\S+)/, '≈ <strong>$1</strong>') : '';
+      els.compare.classList.remove('fade');
+    }, 180);
+  }
+  function startCompareRotation() {
+    if (compareTimer) return;
+    compareTimer = setInterval(() => { compareIdx++; renderCompare(true); }, 4500);
+  }
+  function stopCompareRotation() { clearInterval(compareTimer); compareTimer = 0; }
 
   // ---------- persistence ----------
-  function load() {
+  function loadSettings() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const s = JSON.parse(raw);
-      if (Number.isFinite(s.people)) state.people = clamp(s.people, 1, 500);
-      if (Number.isFinite(s.hourly)) state.hourly = clamp(s.hourly, 0, 100000);
-      if (typeof s.ob === 'boolean') state.ob = s.ob;
-      if (Number.isFinite(s.obPct)) state.obPct = clamp(s.obPct, 0, 300);
+      const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || localStorage.getItem('meeting-cost:v1') || 'null');
+      if (s) {
+        if (Number.isFinite(s.people)) state.people = clamp(s.people, 1, 500);
+        if (Number.isFinite(s.hourly)) state.hourly = clamp(s.hourly, 0, 100000);
+        if (typeof s.ob === 'boolean') state.ob = s.ob;
+        if (Number.isFinite(s.obPct)) state.obPct = clamp(s.obPct, 0, 300);
+        if (Number.isFinite(s.planned)) state.planned = clamp(s.planned, 0, 600);
+      }
     } catch {}
+    // URL parameters override saved settings: ?people=8&hourly=900&ob=50&planned=30
+    const q = new URLSearchParams(location.search);
+    let fromUrl = false;
+    if (q.has('people')) { state.people = clamp(Math.round(+q.get('people')) || 1, 1, 500); fromUrl = true; }
+    if (q.has('hourly')) { state.hourly = clamp(Math.round(+q.get('hourly')) || 0, 0, 100000); fromUrl = true; }
+    if (q.has('planned')) { state.planned = clamp(Math.round(+q.get('planned')) || 0, 0, 600); fromUrl = true; }
+    if (q.has('ob')) { const v = Math.round(+q.get('ob')) || 0; state.ob = v > 0; if (v > 0) state.obPct = clamp(v, 0, 300); fromUrl = true; }
+    if (fromUrl) { saveSettings(); history.replaceState(null, '', location.pathname); }
   }
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ people: state.people, hourly: state.hourly, ob: state.ob, obPct: state.obPct })); } catch {}
+  function saveSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ people: state.people, hourly: state.hourly, ob: state.ob, obPct: state.obPct, planned: state.planned })); } catch {}
   }
-  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  function loadLog() {
+    try { const l = JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); if (Array.isArray(l)) log = l; } catch {}
+  }
+  function saveLog() { try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch {} }
 
   // ---------- ticks on the ring ----------
   (function drawTicks() {
@@ -591,9 +548,9 @@
   // ---------- math ----------
   const effectiveHourly = () => state.hourly * (1 + (state.ob ? state.obPct / 100 : 0));
   const ratePerMs = () => (state.people * effectiveHourly()) / HOUR_MS;
-  function elapsedMs() {
-    return state.accumulated + (state.running ? performance.now() - state.startedAt : 0);
-  }
+  const plannedMs = () => state.planned * MIN_MS;
+  const budget = () => state.people * effectiveHourly() * (state.planned / 60);
+  function elapsedMs() { return state.accumulated + (state.running ? performance.now() - state.startedAt : 0); }
   function currentCost() {
     const runMs = state.running ? performance.now() - state.startedAt : 0;
     return state.costAccum + runMs * ratePerMs();
@@ -609,13 +566,26 @@
     }
   }
 
-  // ---------- rendering ----------
-  function pad(n) { return String(n).padStart(2, '0'); }
+  // ---------- formatting ----------
+  const pad = (n) => String(n).padStart(2, '0');
   function fmtTime(ms) {
     const s = Math.floor(ms / 1000);
     return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
   }
+  function fmtMinSec(ms) {
+    const s = Math.floor(ms / 1000);
+    const h = Math.floor(s / 3600);
+    return (h ? `${h}:` : '') + `${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  }
+  function fmtDuration(ms) {
+    const min = Math.round(ms / MIN_MS);
+    if (min < 1) return 'under en minut';
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60), m = min % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
+  }
 
+  // ---------- rendering ----------
   function renderStatic() {
     els.peopleValue.textContent = fmtInt.format(state.people);
     els.hourlyValue.textContent = fmtInt.format(state.hourly);
@@ -623,6 +593,7 @@
     els.hourly.value = state.hourly;
     els.peopleRange.value = clamp(state.people, +els.peopleRange.min, +els.peopleRange.max);
     els.hourlyRange.value = clamp(state.hourly, +els.hourlyRange.min, +els.hourlyRange.max);
+
     const perHour = state.people * effectiveHourly();
     els.perHour.textContent = fmtKr.format(perHour);
     els.perMinute.textContent = fmtKr.format(perHour / 60);
@@ -635,38 +606,68 @@
     els.obToggle.setAttribute('aria-checked', String(state.ob));
     els.obFields.classList.toggle('off', !state.ob);
     app.classList.toggle('ob', state.ob);
+
+    els.planned.value = state.planned;
+    els.plannedRange.value = clamp(state.planned, +els.plannedRange.min, +els.plannedRange.max);
+    app.classList.toggle('planned', state.planned > 0);
+    if (state.planned > 0) {
+      els.plannedValue.innerHTML = `${fmtInt.format(state.planned)}<small>min</small>`;
+      els.budgetSub.textContent = `Budget ${fmtKr.format(budget())}. Ringen visar hur mycket av tiden som gått.`;
+      els.fourthLabel.textContent = 'Av budgeten';
+    } else {
+      els.plannedValue.textContent = 'Av';
+      els.budgetSub.textContent = 'Ingen budget. Ringen fyller ett varv per timme.';
+      els.fourthLabel.textContent = 'Varv på ringen';
+    }
   }
 
   function renderLive() {
     const ms = elapsedMs();
     const target = currentCost();
 
-    // Smooth count-up: ease displayed value towards actual value.
     const diff = target - state.displayedCost;
     state.displayedCost += Math.abs(diff) < 0.5 ? diff : diff * 0.25;
 
     els.cost.textContent = fmtKr.format(Math.floor(state.displayedCost));
-    els.cost.classList.toggle('hot', target >= 10000);
     els.time.textContent = fmtTime(ms);
     els.perPerson.textContent = fmtKr.format(state.people ? target / state.people : 0);
 
-    const hours = ms / HOUR_MS;
-    const frac = hours - Math.floor(hours);
+    let frac, over = false;
+    if (state.planned > 0) {
+      const p = plannedMs();
+      over = ms > p;
+      frac = over ? 1 : ms / p;
+      const pct = Math.round((ms / p) * 100);
+      els.fourthValue.textContent = `${fmtInt.format(pct)} %`;
+      els.plan.textContent = over
+        ? `+${fmtMinSec(ms - p)} över · ${fmtKr.format(Math.max(0, target - budget()))} över budget`
+        : `av ${fmtMinSec(p)} · budget ${fmtKr.format(budget())}`;
+      if (over && !state.wasOver) { state.wasOver = true; pulse(); }
+      if (!over) state.wasOver = false;
+    } else {
+      const hours = ms / HOUR_MS;
+      frac = hours - Math.floor(hours);
+      const laps = Math.floor(hours);
+      els.fourthValue.textContent = fmtInt.format(laps);
+      if (laps !== state.lastLap) { state.lastLap = laps; pulse(); }
+    }
+    app.classList.toggle('over', over);
+
     els.progress.style.strokeDasharray = CIRC;
     els.progress.style.strokeDashoffset = CIRC * (1 - frac);
     const a = frac * 2 * Math.PI;
     els.head.setAttribute('cx', (100 + R * Math.cos(a)).toFixed(2));
     els.head.setAttribute('cy', (100 + R * Math.sin(a)).toFixed(2));
 
-    const laps = Math.floor(hours);
-    els.laps.textContent = fmtInt.format(laps);
-    if (laps !== state.lastHour) {
-      state.lastHour = laps;
-      els.cost.classList.remove('pulse'); void els.cost.offsetWidth; els.cost.classList.add('pulse');
-    }
+    const hasTime = ms > 0;
+    els.end.disabled = !hasTime;
+    els.share.disabled = !hasTime;
+    els.reset.disabled = !hasTime;
 
+    renderCompare(false);
     document.title = state.running ? `${fmtKr.format(Math.floor(target))} · Möteskostnad` : 'Möteskostnad';
   }
+  function pulse() { els.cost.classList.remove('pulse'); void els.cost.offsetWidth; els.cost.classList.add('pulse'); }
 
   let raf = 0;
   function loop() {
@@ -676,15 +677,25 @@
   }
   function ensureLoop() { if (!raf) raf = requestAnimationFrame(loop); }
 
+  // ---------- toast ----------
+  let toastTimer = 0;
+  function toast(msg) {
+    els.toast.textContent = msg;
+    els.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2200);
+  }
+
   // ---------- controls ----------
   function start() {
     if (state.running) return;
+    if (state.accumulated === 0) state.wallStart = Date.now();
     state.running = true;
     state.startedAt = performance.now();
     app.classList.add('running');
     els.toggle.textContent = 'Pausa';
     els.toggle.classList.add('pause');
-    els.reset.disabled = false;
+    startCompareRotation();
     ensureLoop();
   }
   function pause() {
@@ -694,78 +705,233 @@
     app.classList.remove('running');
     els.toggle.textContent = 'Fortsätt';
     els.toggle.classList.remove('pause');
+    stopCompareRotation();
     ensureLoop();
   }
   function reset() {
     state.running = false;
-    state.accumulated = 0; state.costAccum = 0; state.displayedCost = 0; state.lastHour = 0;
+    state.accumulated = 0; state.costAccum = 0; state.displayedCost = 0; state.lastLap = 0; state.wasOver = false; state.wallStart = 0;
     app.classList.remove('running');
     els.toggle.textContent = 'Starta';
     els.toggle.classList.remove('pause');
-    els.reset.disabled = true;
+    stopCompareRotation();
+    compareIdx = 0;
     renderLive();
   }
 
+  function snapshot() {
+    checkpoint();
+    return {
+      id: Date.now(),
+      start: state.wallStart || Date.now() - state.accumulated,
+      end: Date.now(),
+      durationMs: elapsedMs(),
+      people: state.people,
+      hourly: state.hourly,
+      ob: state.ob,
+      obPct: state.obPct,
+      planned: state.planned,
+      cost: Math.round(currentCost()),
+      email: false,
+    };
+  }
+  function endMeeting() {
+    if (elapsedMs() <= 0) return;
+    const entry = snapshot();
+    log.unshift(entry);
+    saveLog();
+    reset();
+    renderLog();
+    toast(`Mötet sparades: ${fmtKr.format(entry.cost)}`);
+  }
+
+  function summaryText(e) {
+    const parts = [];
+    parts.push(`Mötet tog ${fmtDuration(e.durationMs)} med ${fmtInt.format(e.people)} ${e.people === 1 ? 'person' : 'personer'} (${fmtInt.format(e.hourly)} kr/h${e.ob ? `, OB +${fmtInt.format(e.obPct)} %` : ''}) och kostade ${fmtKr.format(e.cost)}.`);
+    if (e.planned > 0) {
+      const overMs = e.durationMs - e.planned * MIN_MS;
+      parts.push(overMs > MIN_MS / 2
+        ? `Planerat ${e.planned} min, drog över med ${fmtDuration(overMs)}.`
+        : `Planerat ${e.planned} min, höll tiden.`);
+    }
+    const cmp = comparisonFor(e.cost, 0);
+    if (cmp && cmp.startsWith('≈')) parts.push(`Det motsvarar ${cmp}.`);
+    if (e.email) parts.push('Detta kunde ha varit ett mejl.');
+    return parts.join(' ');
+  }
+  async function share(text) {
+    if (navigator.share) {
+      try { await navigator.share({ text }); return; } catch (err) { if (err && err.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(text); toast('Sammanfattning kopierad'); }
+    catch { toast('Kunde inte kopiera. Markera texten i loggen i stället.'); }
+  }
+  function shareCurrent() {
+    if (elapsedMs() <= 0) return;
+    const wasRunning = state.running;
+    const e = snapshot();
+    if (!wasRunning) state.running = false;
+    share(summaryText(e));
+  }
+  function settingsUrl() {
+    const q = new URLSearchParams();
+    q.set('people', state.people); q.set('hourly', state.hourly);
+    if (state.ob) q.set('ob', state.obPct);
+    if (state.planned > 0) q.set('planned', state.planned);
+    return `${location.origin}${location.pathname}?${q}`;
+  }
+
   els.toggle.addEventListener('click', () => state.running ? pause() : start());
+  els.end.addEventListener('click', endMeeting);
   els.reset.addEventListener('click', reset);
+  els.share.addEventListener('click', shareCurrent);
+  els.copyLink.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(settingsUrl()); toast('Länk kopierad'); }
+    catch { toast('Kunde inte kopiera länken'); }
+  });
 
   document.addEventListener('keydown', (e) => {
     const tag = (e.target && e.target.tagName) || '';
-    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.code === 'Space') { e.preventDefault(); state.running ? pause() : start(); }
-    if (e.key === 'r' || e.key === 'R') reset();
-    if (e.key === 'o' || e.key === 'O') toggleOb();
+    const k = e.key.toLowerCase();
+    if (k === 'r') reset();
+    if (k === 'o') toggleOb();
+    if (k === 'e') endMeeting();
+    if (k === 'd') shareCurrent();
   });
 
-  function setPeople(v) {
-    checkpoint();
-    state.people = clamp(Math.round(Number(v) || 1), 1, 500);
-    renderStatic(); renderLive(); save();
-  }
-  function setHourly(v) {
-    checkpoint();
-    state.hourly = clamp(Math.round(Number(v) || 0), 0, 100000);
-    renderStatic(); renderLive(); save();
-  }
+  function setPeople(v) { checkpoint(); state.people = clamp(Math.round(Number(v) || 1), 1, 500); afterSetting(); }
+  function setHourly(v) { checkpoint(); state.hourly = clamp(Math.round(Number(v) || 0), 0, 100000); afterSetting(); }
+  function setPlanned(v) { state.planned = clamp(Math.round(Number(v) || 0), 0, 600); state.wasOver = false; afterSetting(); }
+  function setObPct(v) { checkpoint(); state.obPct = clamp(Math.round(Number(v) || 0), 0, 300); afterSetting(); }
+  function toggleOb(force) { checkpoint(); state.ob = typeof force === 'boolean' ? force : !state.ob; afterSetting(); }
+  function afterSetting() { renderStatic(); renderLive(); saveSettings(); }
 
-  function setObPct(v) {
-    checkpoint();
-    state.obPct = clamp(Math.round(Number(v) || 0), 0, 300);
-    renderStatic(); renderLive(); save();
-  }
-  function toggleOb(force) {
-    checkpoint();
-    state.ob = typeof force === 'boolean' ? force : !state.ob;
-    renderStatic(); renderLive(); save();
-  }
+  const bindNumber = (input, range, setter) => {
+    input.addEventListener('input', (e) => { if (e.target.value !== '') setter(e.target.value); });
+    input.addEventListener('blur', () => renderStatic());
+    range.addEventListener('input', (e) => setter(e.target.value));
+  };
+  bindNumber(els.people, els.peopleRange, setPeople);
+  bindNumber(els.hourly, els.hourlyRange, setHourly);
+  bindNumber(els.planned, els.plannedRange, setPlanned);
+  bindNumber(els.obPct, els.obPctRange, setObPct);
   els.obToggle.addEventListener('click', () => toggleOb());
-  els.obPct.addEventListener('input', (e) => { if (e.target.value !== '') setObPct(e.target.value); });
-  els.obPct.addEventListener('blur', () => renderStatic());
-  els.obPctRange.addEventListener('input', (e) => setObPct(e.target.value));
-
-  els.people.addEventListener('input', (e) => { if (e.target.value !== '') setPeople(e.target.value); });
-  els.people.addEventListener('blur', () => renderStatic());
-  els.peopleRange.addEventListener('input', (e) => setPeople(e.target.value));
-  els.hourly.addEventListener('input', (e) => { if (e.target.value !== '') setHourly(e.target.value); });
-  els.hourly.addEventListener('blur', () => renderStatic());
-  els.hourlyRange.addEventListener('input', (e) => setHourly(e.target.value));
 
   document.querySelectorAll('[data-step]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const delta = Number(btn.dataset.delta);
-      if (btn.dataset.step === 'people') setPeople(state.people + delta);
-      else if (btn.dataset.step === 'ob') setObPct(state.obPct + delta);
-      else setHourly(state.hourly + delta);
+      const which = btn.dataset.step;
+      if (which === 'people') setPeople(state.people + delta);
+      else if (which === 'hourly') setHourly(state.hourly + delta);
+      else if (which === 'planned') setPlanned(state.planned + delta);
+      else if (which === 'ob') setObPct(state.obPct + delta);
     });
   });
 
-  // Keep accurate across tab throttling: performance.now() is wall-clock based, so nothing to do,
-  // but re-render immediately when the tab becomes visible again.
+  // ---------- log ----------
+  const ICONS = {
+    mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+    share: '<svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 15V4"/><path d="m8 8 4-4 4 4"/></svg>',
+    trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>',
+  };
+  function startOfWeek(d) {
+    const x = new Date(d); x.setHours(0, 0, 0, 0);
+    const day = (x.getDay() + 6) % 7; // Monday = 0
+    x.setDate(x.getDate() - day);
+    return x.getTime();
+  }
+  function startOfMonth(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(1); return x.getTime(); }
+
+  function renderLog() {
+    const now = Date.now();
+    const week = startOfWeek(now), month = startOfMonth(now);
+    const sum = (arr) => arr.reduce((a, e) => a + e.cost, 0);
+    const n = (arr) => `${arr.length} ${arr.length === 1 ? 'möte' : 'möten'}`;
+    const inWeek = log.filter((e) => e.end >= week);
+    const inMonth = log.filter((e) => e.end >= month);
+    const emails = log.filter((e) => e.email);
+    els.totWeek.textContent = fmtKr.format(sum(inWeek)); els.totWeekN.textContent = n(inWeek);
+    els.totMonth.textContent = fmtKr.format(sum(inMonth)); els.totMonthN.textContent = n(inMonth);
+    els.totAll.textContent = fmtKr.format(sum(log)); els.totAllN.textContent = n(log);
+    els.totEmail.textContent = fmtKr.format(sum(emails)); els.totEmailN.textContent = emails.length ? n(emails) : 'markera med kuvertet';
+
+    els.empty.style.display = log.length ? 'none' : '';
+    els.exportCsv.disabled = !log.length;
+    els.clearLog.disabled = !log.length;
+
+    els.entries.innerHTML = log.map((e) => `
+      <li class="entry${e.email ? ' email' : ''}" data-id="${e.id}">
+        <div class="e-main">
+          <span class="e-date">${fmtDate.format(new Date(e.start))}</span>
+          <span class="e-meta">${fmtDuration(e.durationMs)} · ${fmtInt.format(e.people)} pers · ${fmtInt.format(e.hourly)} kr/h${e.ob ? ` · OB +${fmtInt.format(e.obPct)} %` : ''}${e.planned ? ` · planerat ${e.planned} min` : ''}</span>
+        </div>
+        <div class="e-cost">${fmtKr.format(e.cost)}</div>
+        <div class="e-actions">
+          <button type="button" class="icon-btn mail" data-act="email" aria-pressed="${e.email}" title="Kunde ha varit ett mejl" aria-label="Markera som: kunde ha varit ett mejl">${ICONS.mail}</button>
+          <button type="button" class="icon-btn" data-act="share" title="Dela" aria-label="Dela sammanfattning">${ICONS.share}</button>
+          <button type="button" class="icon-btn danger" data-act="delete" title="Ta bort" aria-label="Ta bort mötet">${ICONS.trash}</button>
+        </div>
+      </li>`).join('');
+  }
+
+  els.entries.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button[data-act]');
+    if (!btn) return;
+    const li = btn.closest('.entry');
+    const id = Number(li.dataset.id);
+    const idx = log.findIndex((e) => e.id === id);
+    if (idx < 0) return;
+    const act = btn.dataset.act;
+    if (act === 'email') {
+      log[idx].email = !log[idx].email;
+      saveLog(); renderLog();
+      if (log[idx].email) toast(`${fmtKr.format(log[idx].cost)} hade kunnat sparas med ett mejl`);
+    } else if (act === 'share') {
+      share(summaryText(log[idx]));
+    } else if (act === 'delete') {
+      log.splice(idx, 1);
+      saveLog(); renderLog();
+      toast('Mötet togs bort');
+    }
+  });
+
+  els.clearLog.addEventListener('click', () => {
+    if (!log.length) return;
+    if (!confirm(`Ta bort alla ${log.length} sparade möten? Det går inte att ångra.`)) return;
+    log = []; saveLog(); renderLog(); toast('Loggen rensad');
+  });
+
+  function csvEscape(v) {
+    const s = String(v);
+    return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+  els.exportCsv.addEventListener('click', () => {
+    if (!log.length) return;
+    const header = ['Datum', 'Start', 'Slut', 'Längd (min)', 'Personer', 'Timkostnad (kr)', 'OB (%)', 'Planerat (min)', 'Kostnad (kr)', 'Kunde ha varit ett mejl'];
+    const rows = [...log].sort((a, b) => a.start - b.start).map((e) => [
+      fmtIsoDate(e.start), fmtClock(e.start), fmtClock(e.end), Math.round(e.durationMs / MIN_MS),
+      e.people, e.hourly, e.ob ? e.obPct : 0, e.planned || 0, e.cost, e.email ? 'Ja' : 'Nej',
+    ]);
+    // Semicolon separator and BOM so Swedish Excel opens it correctly.
+    const csv = '﻿' + [header, ...rows].map((r) => r.map(csvEscape).join(';')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `moteskostnader-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('CSV exporterad');
+  });
+
   document.addEventListener('visibilitychange', () => { if (!document.hidden) ensureLoop(); });
 
-  load();
+  loadSettings();
+  loadLog();
   renderStatic();
   renderLive();
+  renderLog();
 })();
 </script>
 </body>
