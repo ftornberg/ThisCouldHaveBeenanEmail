@@ -11,7 +11,11 @@ Det är en enda fil utan byggsteg. Öppna `index.html` i webbläsaren, eller ser
 python3 -m http.server 8080
 ```
 
-Appen fungerar som den är på GitHub Pages (peka Pages mot repots rot).
+## GitHub Pages
+
+Workflowet i `.github/workflows/pages.yml` deployar sajten automatiskt vid push till `main`.
+Engångsinställning i repot: **Settings → Pages → Source: GitHub Actions**.
+Observera att Pages på ett privat repo kräver GitHub Pro/Team/Enterprise; på gratisplan måste repot vara publikt.
 
 ## Funktioner
 
