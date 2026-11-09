@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Möteskostnad</title>
+<meta name="description" content="Räkna ut vad ditt möte kostar i realtid. Detta kunde ha varit ett mejl.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%237c5cff' stroke-width='12'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d14;
+    --bg-2: #11141f;
+    --surface: rgba(255,255,255,0.04);
+    --surface-2: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.09);
+    --text: #f2f3f8;
+    --muted: #8a90a6;
+    --accent: #7c5cff;
+    --accent-2: #22d3ee;
+    --hot: #ff6b6b;
+    --glow: rgba(124,92,255,0.45);
+    --ring-track: rgba(255,255,255,0.06);
+    --radius: 18px;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--text);
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(124,92,255,0.18), transparent 60%),
+      radial-gradient(800px 500px at 100% 100%, rgba(34,211,238,0.10), transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 28px 16px 48px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0;
+    font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (min-width: 820px) {
+    .layout { grid-template-columns: 1.3fr 1fr; gap: 32px; }
+  }
+
+  /* ---------- Ring ---------- */
+  .stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: 12px 0;
+  }
+  .ring-wrap {
+    position: relative;
+    width: min(78vw, 420px);
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+  }
+  .ring-wrap::before {
+    content: "";
+    position: absolute;
+    inset: 8%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+    filter: blur(28px);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+  .running .ring-wrap::before { opacity: 0.9; animation: breathe 3.2s ease-in-out infinite; }
+  @keyframes breathe {
+    0%, 100% { transform: scale(0.96); opacity: 0.7; }
+    50% { transform: scale(1.04); opacity: 1; }
+  }
+
+  svg.ring { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+  .ring .track { fill: none; stroke: var(--ring-track); stroke-width: 10; }
+  .ring .progress {
+    fill: none;
+    stroke: url(#grad);
+    stroke-width: 10;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 6px var(--glow));
+    transition: stroke-dashoffset 0.12s linear;
+  }
+  .ring .tick {
+    stroke: rgba(255,255,255,0.14);
+    stroke-width: 2;
+  }
+  .ring .head {
+    fill: #fff;
+    filter: drop-shadow(0 0 8px var(--accent-2));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .running .ring .head { opacity: 1; }
+
+  .readout {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+    padding: 0 14%;
+  }
+  .readout .cost {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: clamp(1.9rem, 7.5vw, 3.1rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(90deg, #ffffff, #cfd4ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .readout .cost.hot {
+    background: linear-gradient(90deg, #fff, #ffb3b3);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .readout .unit { color: var(--muted); font-size: 0.85rem; margin-top: -2px; }
+  .readout .time {
+    font-family: var(--mono);
+    font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+    font-weight: 500;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    margin-top: 6px;
+  }
+  .readout .rate {
+    font-size: 0.78rem;
+    color: var(--muted);
+    opacity: 0.8;
+  }
+
+  .pulse { animation: pop 0.35s cubic-bezier(.2,.8,.2,1); }
+  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+  /* ---------- Controls ---------- */
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 12px 22px;
+    font-weight: 600;
+    min-width: 128px;
+    min-height: 44px;
+    transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  button:hover { background: var(--surface-2); transform: translateY(-1px); }
+  button:active { transform: translateY(0) scale(0.98); }
+  button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  button.primary {
+    background: linear-gradient(135deg, var(--accent), #5b3df5);
+    border-color: transparent;
+    box-shadow: 0 8px 24px -8px var(--glow);
+  }
+  button.primary:hover { box-shadow: 0 12px 30px -8px var(--glow); }
+  button.primary.pause { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 8px 24px -8px rgba(245,158,11,0.5); }
+  button.ghost { background: transparent; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ---------- Panel ---------- */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    backdrop-filter: blur(10px);
+  }
+  .panel h2 {
+    margin: 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .field { display: flex; flex-direction: column; gap: 10px; }
+  .field-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .field label { font-weight: 500; font-size: 0.95rem; }
+  .field .value {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .field .value small { font-family: var(--sans); font-weight: 500; color: var(--muted); font-size: 0.8rem; margin-left: 4px; }
+
+  .stepper { display: flex; align-items: center; gap: 10px; }
+  .stepper button { min-width: 44px; width: 44px; padding: 0; border-radius: 12px; font-size: 1.2rem; line-height: 1; }
+  .stepper input[type="number"] {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1.05rem;
+    text-align: center;
+    padding: 10px 12px;
+    color: var(--text);
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper input:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    height: 32px;
+    cursor: pointer;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat .k { color: var(--muted); font-size: 0.75rem; }
+  .stat .v { font-family: var(--mono); font-weight: 600; font-size: 1rem; font-variant-numeric: tabular-nums; }
+
+  .hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  .hint strong { color: var(--text); font-weight: 600; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 0 16px 24px;
+  }
+  footer kbd {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .running .ring-wrap::before { animation: none; }
+    .pulse { animation: none; }
+    .ring .progress { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <h1>Vad kostar det här mötet?</h1>
+    <p>Starta klockan när mötet börjar. Kostnaden tickar i realtid.</p>
+  </header>
+
+  <main class="layout">
+    <section class="stage" aria-label="Möteskostnad i realtid">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+          <defs>
+            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#22d3ee"/>
+              <stop offset="55%" stop-color="#7c5cff"/>
+              <stop offset="100%" stop-color="#ff6b9d"/>
+            </linearGradient>
+          </defs>
+          <g id="ticks"></g>
+          <circle class="track" cx="100" cy="100" r="88"/>
+          <circle class="progress" id="progress" cx="100" cy="100" r="88"/>
+          <circle class="head" id="head" r="5" cx="188" cy="100"/>
+        </svg>
+        <div class="readout">
+          <div class="cost" id="cost" aria-live="polite">0 kr</div>
+          <div class="unit">hittills</div>
+          <div class="time" id="time">00:00:00</div>
+          <div class="rate" id="rate"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="toggle" type="button">Starta</button>
+        <button class="ghost" id="reset" type="button" disabled>Återställ</button>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="Inställningar">
+      <h2>Inställningar</h2>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="people">Antal personer</label>
+          <div class="value"><span id="peopleValue">6</span><small>pers</small></div>
+        </div>
+        <div class="stepper">
+          <button type="button" data-step="people" data-delta="-1" aria-label="Färre personer">−</button>
+          <input type="number" id="people" min="1" max="500" step="1" value="6" inputmode="numeric">
+          <button type="button" data-step="people" data-delta="1" aria-label="Fler personer">+</button>
+        </div>
+        <input type="range" id="peopleRange" min="1" max="30" step="1" value="6" aria-label="Antal personer (reglage)">
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="hourly">Timkostnad per person</label>
+          <div class="value"><span id="hourlyValue">800</span><small>kr/h</small></div>
+        </div>
+        <div class="stepper">
+          <button type="button" data-step="hourly" data-delta="-50" aria-label="Lägre timkostnad">−</button>
+          <input type="number" id="hourly" min="0" max="100000" step="50" value="800" inputmode="numeric">
+          <button type="button" data-step="hourly" data-delta="50" aria-label="Högre timkostnad">+</button>
+        </div>
+        <input type="range" id="hourlyRange" min="100" max="3000" step="50" value="800" aria-label="Timkostnad (reglage)">
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span class="k">Per minut</span><span class="v" id="perMinute">–</span></div>
+        <div class="stat"><span class="k">Per timme</span><span class="v" id="perHour">–</span></div>
+        <div class="stat"><span class="k">Per person hittills</span><span class="v" id="perPerson">–</span></div>
+        <div class="stat"><span class="k">Varv på ringen</span><span class="v" id="laps">0</span></div>
+      </div>
+
+      <p class="hint">
+        <strong>Tips:</strong> Timkostnad ≈ månadslön × 1,4 (arbetsgivaravgift och overhead) ÷ 160 timmar.
+        En lön på 45 000 kr/mån blir ungefär 400 kr/h.
+      </p>
+    </aside>
+  </main>
+</div>
+<footer>Ett varv på ringen = en timme. <kbd>Mellanslag</kbd> startar/pausar, <kbd>R</kbd> återställer. Detta kunde ha varit ett mejl.</footer>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const app = $('app');
+  const els = {
+    cost: $('cost'), time: $('time'), rate: $('rate'),
+    progress: $('progress'), head: $('head'),
+    toggle: $('toggle'), reset: $('reset'),
+    people: $('people'), peopleRange: $('peopleRange'), peopleValue: $('peopleValue'),
+    hourly: $('hourly'), hourlyRange: $('hourlyRange'), hourlyValue: $('hourlyValue'),
+    perMinute: $('perMinute'), perHour: $('perHour'), perPerson: $('perPerson'), laps: $('laps'),
+  };
+
+  const R = 88;
+  const CIRC = 2 * Math.PI * R;
+  const HOUR_MS = 3600 * 1000;
+  const STORAGE_KEY = 'meeting-cost:v1';
+
+  const fmtKr = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 });
+  const fmtInt = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 });
+
+  const state = {
+    people: 6,
+    hourly: 800,
+    running: false,
+    accumulated: 0,   // ms accumulated before current run
+    costAccum: 0,     // kr accumulated before current settings change
+    startedAt: 0,     // performance.now() at (re)start
+    displayedCost: 0,
+    lastHour: 0,
+  };
+
+  // ---------- persistence ----------
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (Number.isFinite(s.people)) state.people = clamp(s.people, 1, 500);
+      if (Number.isFinite(s.hourly)) state.hourly = clamp(s.hourly, 0, 100000);
+    } catch {}
+  }
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ people: state.people, hourly: state.hourly })); } catch {}
+  }
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+  // ---------- ticks on the ring ----------
+  (function drawTicks() {
+    const g = document.getElementById('ticks');
+    let html = '';
+    for (let i = 0; i < 60; i++) {
+      const a = (i / 60) * 2 * Math.PI;
+      const major = i % 5 === 0;
+      const r1 = major ? 74 : 77, r2 = 80;
+      const x1 = 100 + r1 * Math.cos(a), y1 = 100 + r1 * Math.sin(a);
+      const x2 = 100 + r2 * Math.cos(a), y2 = 100 + r2 * Math.sin(a);
+      html += `<line class="tick" x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"${major ? ' style="stroke:rgba(255,255,255,0.28)"' : ''}/>`;
+    }
+    g.innerHTML = html;
+  })();
+
+  // ---------- math ----------
+  const ratePerMs = () => (state.people * state.hourly) / HOUR_MS;
+  function elapsedMs() {
+    return state.accumulated + (state.running ? performance.now() - state.startedAt : 0);
+  }
+  function currentCost() {
+    const runMs = state.running ? performance.now() - state.startedAt : 0;
+    return state.costAccum + runMs * ratePerMs();
+  }
+  // Settings may change mid-meeting; lock in cost so far at the old rate.
+  function checkpoint() {
+    if (state.running) {
+      const now = performance.now();
+      const runMs = now - state.startedAt;
+      state.accumulated += runMs;
+      state.costAccum += runMs * ratePerMs();
+      state.startedAt = now;
+    }
+  }
+
+  // ---------- rendering ----------
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function fmtTime(ms) {
+    const s = Math.floor(ms / 1000);
+    return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  }
+
+  function renderStatic() {
+    els.peopleValue.textContent = fmtInt.format(state.people);
+    els.hourlyValue.textContent = fmtInt.format(state.hourly);
+    els.people.value = state.people;
+    els.hourly.value = state.hourly;
+    els.peopleRange.value = clamp(state.people, +els.peopleRange.min, +els.peopleRange.max);
+    els.hourlyRange.value = clamp(state.hourly, +els.hourlyRange.min, +els.hourlyRange.max);
+    const perHour = state.people * state.hourly;
+    els.perHour.textContent = fmtKr.format(perHour);
+    els.perMinute.textContent = fmtKr.format(perHour / 60);
+    els.rate.textContent = `${fmtInt.format(state.people)} pers × ${fmtInt.format(state.hourly)} kr/h`;
+  }
+
+  function renderLive() {
+    const ms = elapsedMs();
+    const target = currentCost();
+
+    // Smooth count-up: ease displayed value towards actual value.
+    const diff = target - state.displayedCost;
+    state.displayedCost += Math.abs(diff) < 0.5 ? diff : diff * 0.25;
+
+    els.cost.textContent = fmtKr.format(Math.floor(state.displayedCost));
+    els.cost.classList.toggle('hot', target >= 10000);
+    els.time.textContent = fmtTime(ms);
+    els.perPerson.textContent = fmtKr.format(state.people ? target / state.people : 0);
+
+    const hours = ms / HOUR_MS;
+    const frac = hours - Math.floor(hours);
+    els.progress.style.strokeDasharray = CIRC;
+    els.progress.style.strokeDashoffset = CIRC * (1 - frac);
+    const a = frac * 2 * Math.PI;
+    els.head.setAttribute('cx', (100 + R * Math.cos(a)).toFixed(2));
+    els.head.setAttribute('cy', (100 + R * Math.sin(a)).toFixed(2));
+
+    const laps = Math.floor(hours);
+    els.laps.textContent = fmtInt.format(laps);
+    if (laps !== state.lastHour) {
+      state.lastHour = laps;
+      els.cost.classList.remove('pulse'); void els.cost.offsetWidth; els.cost.classList.add('pulse');
+    }
+
+    document.title = state.running ? `${fmtKr.format(Math.floor(target))} · Möteskostnad` : 'Möteskostnad';
+  }
+
+  let raf = 0;
+  function loop() {
+    renderLive();
+    if (state.running || Math.abs(currentCost() - state.displayedCost) >= 0.5) raf = requestAnimationFrame(loop);
+    else raf = 0;
+  }
+  function ensureLoop() { if (!raf) raf = requestAnimationFrame(loop); }
+
+  // ---------- controls ----------
+  function start() {
+    if (state.running) return;
+    state.running = true;
+    state.startedAt = performance.now();
+    app.classList.add('running');
+    els.toggle.textContent = 'Pausa';
+    els.toggle.classList.add('pause');
+    els.reset.disabled = false;
+    ensureLoop();
+  }
+  function pause() {
+    if (!state.running) return;
+    checkpoint();
+    state.running = false;
+    app.classList.remove('running');
+    els.toggle.textContent = 'Fortsätt';
+    els.toggle.classList.remove('pause');
+    ensureLoop();
+  }
+  function reset() {
+    state.running = false;
+    state.accumulated = 0; state.costAccum = 0; state.displayedCost = 0; state.lastHour = 0;
+    app.classList.remove('running');
+    els.toggle.textContent = 'Starta';
+    els.toggle.classList.remove('pause');
+    els.reset.disabled = true;
+    renderLive();
+  }
+
+  els.toggle.addEventListener('click', () => state.running ? pause() : start());
+  els.reset.addEventListener('click', reset);
+
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.code === 'Space') { e.preventDefault(); state.running ? pause() : start(); }
+    if (e.key === 'r' || e.key === 'R') reset();
+  });
+
+  function setPeople(v) {
+    checkpoint();
+    state.people = clamp(Math.round(Number(v) || 1), 1, 500);
+    renderStatic(); renderLive(); save();
+  }
+  function setHourly(v) {
+    checkpoint();
+    state.hourly = clamp(Math.round(Number(v) || 0), 0, 100000);
+    renderStatic(); renderLive(); save();
+  }
+
+  els.people.addEventListener('input', (e) => { if (e.target.value !== '') setPeople(e.target.value); });
+  els.people.addEventListener('blur', () => renderStatic());
+  els.peopleRange.addEventListener('input', (e) => setPeople(e.target.value));
+  els.hourly.addEventListener('input', (e) => { if (e.target.value !== '') setHourly(e.target.value); });
+  els.hourly.addEventListener('blur', () => renderStatic());
+  els.hourlyRange.addEventListener('input', (e) => setHourly(e.target.value));
+
+  document.querySelectorAll('[data-step]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const delta = Number(btn.dataset.delta);
+      if (btn.dataset.step === 'people') setPeople(state.people + delta);
+      else setHourly(state.hourly + delta);
+    });
+  });
+
+  // Keep accurate across tab throttling: performance.now() is wall-clock based, so nothing to do,
+  // but re-render immediately when the tab becomes visible again.
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) ensureLoop(); });
+
+  load();
+  renderStatic();
+  renderLive();
+})();
+</script>
+</body>
+</html>
