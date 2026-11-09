@@ -5,11 +5,13 @@ tryck **Starta** och se vad mötet kostar i realtid. Ringen fyller ett varv per 
 
 ## Köra
 
-Det är en enda fil utan byggsteg. Öppna `index.html` i webbläsaren, eller servera mappen:
+Det är en enda fil utan byggsteg och utan npm-beroenden. Öppna `index.html` direkt i webbläsaren, eller starta den inbyggda dev-servern med Node (18 eller senare):
 
 ```sh
-python3 -m http.server 8080
+npm start
 ```
+
+Appen körs då på http://localhost:8080. Sätt `PORT` för en annan port.
 
 ## GitHub Pages
 
