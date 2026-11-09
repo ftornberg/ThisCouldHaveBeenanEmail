@@ -21,7 +21,8 @@ Observera att Pages på ett privat repo kräver GitHub Pro/Team/Enterprise; på 
 
 ## Funktioner
 
-- Stoppur med start, paus och återställ. Mellanslag startar/pausar, `R` återställer.
+- Stoppur med start, paus och återställ. Mellanslag startar/pausar, `R` återställer, `O` växlar OB-tid.
+- OB-läge: slå på ett procentpåslag för obekväm arbetstid (t.ex. +50 %). Ringen skiftar till varm ton och en etikett visar påslaget. Går att slå på mitt i mötet, kostnaden hittills låses.
 - Kostnaden räknar upp mjukt i realtid. Flikens titel visar kostnaden så den syns även när du byter flik.
 - Ändrar du antal personer eller timkostnad mitt i mötet låses kostnaden hittills och nya takten gäller framåt.
 - Inställningarna sparas lokalt i webbläsaren.
