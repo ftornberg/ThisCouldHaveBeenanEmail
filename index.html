@@ -199,6 +199,10 @@
   .switch:hover { transform: none; }
   .switch[aria-checked="true"] { background: linear-gradient(135deg, #ff7a3d, #e4541f); border-color: transparent; box-shadow: 0 0 16px -2px rgba(255,122,61,0.6); }
   .switch[aria-checked="true"]::after { transform: translateX(22px); }
+  .switch.neutral[aria-checked="true"] { background: linear-gradient(135deg, var(--accent), #5b3df5); box-shadow: 0 0 16px -2px var(--glow); }
+  .ob .switch.neutral[aria-checked="true"] { background: linear-gradient(135deg, #ff7a3d, #e4541f); }
+  .over .switch.neutral[aria-checked="true"] { background: linear-gradient(135deg, #ff4d6d, #c81d4a); }
+  .switch:disabled { opacity: 0.4; cursor: not-allowed; }
   .ob-fields { display: flex; flex-direction: column; gap: 10px; transition: opacity 0.25s; }
   .ob-fields.off { opacity: 0.4; pointer-events: none; }
 
@@ -371,6 +375,16 @@
         </div>
       </div>
 
+      <div class="field">
+        <div class="toggle-row">
+          <div class="label-group">
+            <label for="wakeToggle">Håll skärmen vaken</label>
+            <span class="sub" id="wakeSub">Hindrar skärmen från att släckas och låsas medan mötet pågår</span>
+          </div>
+          <button type="button" class="switch neutral" id="wakeToggle" role="switch" aria-checked="true" aria-label="Håll skärmen vaken på eller av"></button>
+        </div>
+      </div>
+
       <div class="stats">
         <div class="stat"><span class="k">Per minut</span><span class="v" id="perMinute">–</span></div>
         <div class="stat"><span class="k">Per timme</span><span class="v" id="perHour">–</span></div>
@@ -427,6 +441,7 @@
     fourthLabel: $('fourthLabel'), fourthValue: $('fourthValue'),
     obToggle: $('obToggle'), obFields: $('obFields'), obPct: $('obPct'), obPctRange: $('obPctRange'),
     obPctValue: $('obPctValue'), obBadge: $('obBadge'),
+    wakeToggle: $('wakeToggle'), wakeSub: $('wakeSub'),
     entries: $('entries'), empty: $('empty'), exportCsv: $('exportCsv'), clearLog: $('clearLog'),
     totWeek: $('totWeek'), totMonth: $('totMonth'), totAll: $('totAll'), totEmail: $('totEmail'),
     totWeekN: $('totWeekN'), totMonthN: $('totMonthN'), totAllN: $('totAllN'), totEmailN: $('totEmailN'),
@@ -439,6 +454,7 @@
   const MIN_MS = 60 * 1000;
   const SETTINGS_KEY = 'meeting-cost:v2';
   const LOG_KEY = 'meeting-cost:log';
+  const ACTIVE_KEY = 'meeting-cost:active';
 
   const fmtKr = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 });
   const fmtInt = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 });
@@ -449,8 +465,10 @@
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
   const state = {
-    people: 6, hourly: 800, ob: false, obPct: 50, planned: 0,
+    people: 6, hourly: 800, ob: false, obPct: 50, planned: 0, keepAwake: true,
     running: false,
+    // All timestamps are wall-clock (Date.now()), so elapsed time stays correct when the
+    // tab is frozen, the phone is locked, or the page is reloaded mid-meeting.
     accumulated: 0, costAccum: 0, startedAt: 0, wallStart: 0,
     displayedCost: 0, lastLap: 0, wasOver: false,
   };
@@ -502,7 +520,7 @@
   function stopCompareRotation() { clearInterval(compareTimer); compareTimer = 0; }
 
   // ---------- persistence ----------
-  function loadSettings() {
+  function loadStoredSettings() {
     try {
       const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || localStorage.getItem('meeting-cost:v1') || 'null');
       if (s) {
@@ -511,10 +529,15 @@
         if (typeof s.ob === 'boolean') state.ob = s.ob;
         if (Number.isFinite(s.obPct)) state.obPct = clamp(s.obPct, 0, 300);
         if (Number.isFinite(s.planned)) state.planned = clamp(s.planned, 0, 600);
+        if (typeof s.keepAwake === 'boolean') state.keepAwake = s.keepAwake;
       }
     } catch {}
-    // URL parameters override saved settings: ?people=8&hourly=900&ob=50&planned=30
+  }
+  // URL parameters override saved settings: ?people=8&hourly=900&ob=50&planned=30
+  function applyUrlSettings() {
     const q = new URLSearchParams(location.search);
+    if (![...q.keys()].some((k) => ['people', 'hourly', 'planned', 'ob'].includes(k))) return;
+    checkpoint(); // a restored meeting keeps its cost so far at the old rate
     let fromUrl = false;
     if (q.has('people')) { state.people = clamp(Math.round(+q.get('people')) || 1, 1, 500); fromUrl = true; }
     if (q.has('hourly')) { state.hourly = clamp(Math.round(+q.get('hourly')) || 0, 0, 100000); fromUrl = true; }
@@ -523,12 +546,45 @@
     if (fromUrl) { saveSettings(); history.replaceState(null, '', location.pathname); }
   }
   function saveSettings() {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ people: state.people, hourly: state.hourly, ob: state.ob, obPct: state.obPct, planned: state.planned })); } catch {}
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ people: state.people, hourly: state.hourly, ob: state.ob, obPct: state.obPct, planned: state.planned, keepAwake: state.keepAwake })); } catch {}
   }
   function loadLog() {
     try { const l = JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); if (Array.isArray(l)) log = l; } catch {}
   }
   function saveLog() { try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch {} }
+
+  // The meeting in progress is persisted so it survives reloads and tabs discarded by the browser.
+  function saveActive() {
+    try {
+      if (!state.running && state.accumulated <= 0) localStorage.removeItem(ACTIVE_KEY);
+      else localStorage.setItem(ACTIVE_KEY, JSON.stringify({
+        running: state.running, accumulated: state.accumulated, costAccum: state.costAccum,
+        startedAt: state.startedAt, wallStart: state.wallStart,
+      }));
+    } catch {}
+  }
+  function clearMeetingState() {
+    state.running = false;
+    state.accumulated = 0; state.costAccum = 0; state.startedAt = 0; state.wallStart = 0;
+    state.displayedCost = 0; state.lastLap = 0; state.wasOver = false;
+  }
+  // Returns true if a meeting (running or paused) was restored from storage.
+  function restoreMeeting() {
+    let m = null;
+    try { m = JSON.parse(localStorage.getItem(ACTIVE_KEY) || 'null'); } catch {}
+    const valid = m && Number.isFinite(m.accumulated) && Number.isFinite(m.costAccum) && Number.isFinite(m.startedAt)
+      && (m.running || m.accumulated > 0);
+    if (!valid) { clearMeetingState(); return false; }
+    state.running = !!m.running;
+    state.accumulated = Math.max(0, m.accumulated);
+    state.costAccum = Math.max(0, m.costAccum);
+    state.startedAt = Math.min(m.startedAt, Date.now());
+    state.wallStart = Number.isFinite(m.wallStart) ? m.wallStart : 0;
+    state.lastLap = Math.floor(elapsedMs() / HOUR_MS);
+    state.wasOver = state.planned > 0 && elapsedMs() > plannedMs();
+    state.displayedCost = currentCost();
+    return true;
+  }
 
   // ---------- ticks on the ring ----------
   (function drawTicks() {
@@ -550,19 +606,18 @@
   const ratePerMs = () => (state.people * effectiveHourly()) / HOUR_MS;
   const plannedMs = () => state.planned * MIN_MS;
   const budget = () => state.people * effectiveHourly() * (state.planned / 60);
-  function elapsedMs() { return state.accumulated + (state.running ? performance.now() - state.startedAt : 0); }
-  function currentCost() {
-    const runMs = state.running ? performance.now() - state.startedAt : 0;
-    return state.costAccum + runMs * ratePerMs();
-  }
+  const runningMs = () => (state.running ? Math.max(0, Date.now() - state.startedAt) : 0);
+  function elapsedMs() { return state.accumulated + runningMs(); }
+  function currentCost() { return state.costAccum + runningMs() * ratePerMs(); }
   // Settings may change mid-meeting; lock in cost so far at the old rate.
   function checkpoint() {
     if (state.running) {
-      const now = performance.now();
-      const runMs = now - state.startedAt;
+      const now = Date.now();
+      const runMs = Math.max(0, now - state.startedAt);
       state.accumulated += runMs;
       state.costAccum += runMs * ratePerMs();
       state.startedAt = now;
+      saveActive();
     }
   }
 
@@ -606,6 +661,10 @@
     els.obToggle.setAttribute('aria-checked', String(state.ob));
     els.obFields.classList.toggle('off', !state.ob);
     app.classList.toggle('ob', state.ob);
+
+    els.wakeToggle.setAttribute('aria-checked', String(wakeSupported && state.keepAwake));
+    els.wakeToggle.disabled = !wakeSupported;
+    if (!wakeSupported) els.wakeSub.textContent = 'Stöds inte i den här webbläsaren';
 
     els.planned.value = state.planned;
     els.plannedRange.value = clamp(state.planned, +els.plannedRange.min, +els.plannedRange.max);
@@ -665,7 +724,47 @@
     els.reset.disabled = !hasTime;
 
     renderCompare(false);
-    document.title = state.running ? `${fmtKr.format(Math.floor(target))} · Möteskostnad` : 'Möteskostnad';
+    updateTitle();
+  }
+
+  // The tab title is also refreshed by a 1 s timer, because requestAnimationFrame
+  // stops in background tabs while timers keep firing (throttled to about once a second).
+  let titleTimer = 0;
+  function updateTitle() {
+    const cost = fmtKr.format(Math.floor(currentCost()));
+    if (state.running) {
+      const over = state.planned > 0 && elapsedMs() > plannedMs();
+      document.title = `${over ? 'Över budget · ' : ''}${cost} · Möteskostnad`;
+    } else if (state.accumulated > 0) {
+      document.title = `Pausat · ${cost} · Möteskostnad`;
+    } else {
+      document.title = 'Möteskostnad';
+    }
+  }
+  function startTitleTimer() { if (!titleTimer) titleTimer = setInterval(updateTitle, 1000); }
+  function stopTitleTimer() { clearInterval(titleTimer); titleTimer = 0; }
+
+  // ---------- screen wake lock ----------
+  const wakeSupported = 'wakeLock' in navigator;
+  let wakeSentinel = null;
+  let wakePending = false;
+  const wantWake = () => wakeSupported && state.keepAwake && state.running;
+  async function syncWakeLock() {
+    if (wantWake() && document.visibilityState === 'visible') {
+      if (wakeSentinel || wakePending) return;
+      wakePending = true;
+      try {
+        const sentinel = await navigator.wakeLock.request('screen');
+        // The browser releases the lock itself when the tab is hidden; we re-acquire on return.
+        sentinel.addEventListener('release', () => { if (wakeSentinel === sentinel) wakeSentinel = null; });
+        wakeSentinel = sentinel;
+      } catch {} finally { wakePending = false; }
+      if (wakeSentinel && !wantWake()) syncWakeLock(); // state changed while the request was pending
+    } else if (wakeSentinel && !wantWake()) {
+      const sentinel = wakeSentinel;
+      wakeSentinel = null;
+      try { await sentinel.release(); } catch {}
+    }
   }
   function pulse() { els.cost.classList.remove('pulse'); void els.cost.offsetWidth; els.cost.classList.add('pulse'); }
 
@@ -687,35 +786,36 @@
   }
 
   // ---------- controls ----------
+  // Brings buttons, timers and the wake lock in line with state.running.
+  function syncRunUi() {
+    app.classList.toggle('running', state.running);
+    els.toggle.textContent = state.running ? 'Pausa' : (state.accumulated > 0 ? 'Fortsätt' : 'Starta');
+    els.toggle.classList.toggle('pause', state.running);
+    if (state.running) { startCompareRotation(); startTitleTimer(); }
+    else { stopCompareRotation(); stopTitleTimer(); }
+    syncWakeLock();
+    ensureLoop();
+  }
   function start() {
     if (state.running) return;
     if (state.accumulated === 0) state.wallStart = Date.now();
     state.running = true;
-    state.startedAt = performance.now();
-    app.classList.add('running');
-    els.toggle.textContent = 'Pausa';
-    els.toggle.classList.add('pause');
-    startCompareRotation();
-    ensureLoop();
+    state.startedAt = Date.now();
+    saveActive();
+    syncRunUi();
   }
   function pause() {
     if (!state.running) return;
     checkpoint();
     state.running = false;
-    app.classList.remove('running');
-    els.toggle.textContent = 'Fortsätt';
-    els.toggle.classList.remove('pause');
-    stopCompareRotation();
-    ensureLoop();
+    saveActive();
+    syncRunUi();
   }
   function reset() {
-    state.running = false;
-    state.accumulated = 0; state.costAccum = 0; state.displayedCost = 0; state.lastLap = 0; state.wasOver = false; state.wallStart = 0;
-    app.classList.remove('running');
-    els.toggle.textContent = 'Starta';
-    els.toggle.classList.remove('pause');
-    stopCompareRotation();
+    clearMeetingState();
+    saveActive();
     compareIdx = 0;
+    syncRunUi();
     renderLive();
   }
 
@@ -768,10 +868,7 @@
   }
   function shareCurrent() {
     if (elapsedMs() <= 0) return;
-    const wasRunning = state.running;
-    const e = snapshot();
-    if (!wasRunning) state.running = false;
-    share(summaryText(e));
+    share(summaryText(snapshot()));
   }
   function settingsUrl() {
     const q = new URLSearchParams();
@@ -818,6 +915,10 @@
   bindNumber(els.planned, els.plannedRange, setPlanned);
   bindNumber(els.obPct, els.obPctRange, setObPct);
   els.obToggle.addEventListener('click', () => toggleOb());
+  els.wakeToggle.addEventListener('click', () => {
+    state.keepAwake = !state.keepAwake;
+    renderStatic(); saveSettings(); syncWakeLock();
+  });
 
   document.querySelectorAll('[data-step]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -925,13 +1026,33 @@
     toast('CSV exporterad');
   });
 
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) ensureLoop(); });
+  // Coming back from the background, a locked phone or the back/forward cache:
+  // redraw at once from the wall clock and take the wake lock again.
+  function wake() { if (!document.hidden) { updateTitle(); ensureLoop(); syncWakeLock(); } }
+  document.addEventListener('visibilitychange', wake);
+  window.addEventListener('pageshow', wake);
+  window.addEventListener('focus', wake);
 
-  loadSettings();
+  // Keep several open tabs in step, so one meeting is never counted or logged twice.
+  window.addEventListener('storage', (e) => {
+    if (e.key === ACTIVE_KEY) { restoreMeeting(); syncRunUi(); renderLive(); }
+    else if (e.key === LOG_KEY) { loadLog(); renderLog(); }
+    else if (e.key === SETTINGS_KEY) { loadStoredSettings(); renderStatic(); renderLive(); syncWakeLock(); }
+  });
+
+  loadStoredSettings();
+  const restored = restoreMeeting();
+  applyUrlSettings();
   loadLog();
   renderStatic();
+  syncRunUi();
   renderLive();
   renderLog();
+  if (restored) {
+    toast(state.running
+      ? `Pågående möte återupptogs${state.wallStart ? `, startade ${fmtClock(state.wallStart)}` : ''}`
+      : 'Pausat möte återställt');
+  }
 })();
 </script>
 </body>

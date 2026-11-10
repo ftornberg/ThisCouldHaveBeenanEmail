@@ -26,7 +26,15 @@ Appen körs då på http://localhost:8080. Sätt `PORT` för en annan port.
 - **Länk med inställningar**: `?people=8&hourly=900&ob=50&planned=30` förifyller kalkylatorn.
 - Ändrar du inställningar mitt i mötet låses kostnaden hittills och nya takten gäller framåt.
 - Kortkommandon: mellanslag start/paus, `E` avsluta, `R` återställ, `O` OB-tid, `D` dela.
+- **Tål viloläge**: tiden räknas på väggklockan, så tid och kostnad stämmer även om fliken legat i bakgrunden eller mobilen varit låst.
+- **Pågående möte sparas**: laddas sidan om, eller kastar webbläsaren ut fliken, fortsätter mötet där det var. Flera öppna flikar hålls i synk.
+- **Håll skärmen vaken**: skärmen släcks inte medan mötet pågår (Screen Wake Lock). Går att stänga av i inställningarna.
+- Fliktiteln fortsätter visa kostnaden även när fliken ligger i bakgrunden.
 - Allt sparas lokalt i webbläsaren. Ingen data lämnar din enhet.
+
+### Begränsning
+
+En webbsida kan inte köra kod medan mobilen är låst. Appen räknar därför ikapp när den visas igen i stället för att ticka i bakgrunden. Resultatet blir detsamma, men ingen avisering kan skickas från en låst mobil.
 
 ## GitHub Pages
 
