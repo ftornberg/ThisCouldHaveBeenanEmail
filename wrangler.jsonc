@@ -13,5 +13,7 @@
   // Anges uttryckligen: när "routes" finns stänger wrangler annars av workers.dev-adressen,
   // och förhandsadresserna för branches följer samma förval.
   "workers_dev": true,
-  "preview_urls": true
+  "preview_urls": true,
+  // Krävs av `wrangler preview`, som Cloudflare kör för varje branch. Blocket får vara tomt.
+  "previews": {}
 }
