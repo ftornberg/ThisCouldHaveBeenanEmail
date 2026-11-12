@@ -3,6 +3,8 @@
 En möteskostnadskalkylator. Ställ in antal personer och genomsnittlig timkostnad,
 tryck **Starta** och se vad mötet kostar i realtid på en animerad ring.
 
+Live: https://moteskostnad.tornbergdev.se
+
 ## Köra
 
 Det är en enda fil utan byggsteg och utan npm-beroenden. Öppna `index.html` direkt i webbläsaren, eller starta den inbyggda dev-servern med Node (18 eller senare):
@@ -46,4 +48,6 @@ Observera att Pages på ett privat repo kräver GitHub Pro/Team/Enterprise; på 
 
 Sajten kan även publiceras som en Cloudflare Worker med statiska filer. `wrangler.jsonc` pekar ut repots rot och `.assetsignore` ser till att bara appen laddas upp.
 
-Koppla repot under **Workers & Pages → Create → Import a repository** med projektnamnet `moteskostnad`, tomt byggkommando och deploy-kommandot `npx wrangler deploy`. Namnet måste stämma med `name` i `wrangler.jsonc`. Varje push till `main` publiceras då på `moteskostnad.<kontonamn>.workers.dev`.
+Koppla repot under **Workers & Pages → Create → Import a repository** med projektnamnet `moteskostnad`, tomt byggkommando och deploy-kommandot `npx wrangler deploy`. Namnet måste stämma med `name` i `wrangler.jsonc`. Varje push till `main` publiceras då på https://moteskostnad.tornbergdev.se och på `moteskostnad.<kontonamn>.workers.dev`.
+
+Den egna domänen anges under `routes` i `wrangler.jsonc`. Zonen `tornbergdev.se` måste ligga på samma Cloudflare-konto.

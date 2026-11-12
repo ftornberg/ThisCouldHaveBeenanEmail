@@ -5,5 +5,13 @@
   "compatibility_date": "2026-11-10",
   "assets": {
     "directory": "./"
-  }
+  },
+  // Egen domän. Zonen tornbergdev.se måste ligga på samma Cloudflare-konto.
+  "routes": [
+    { "pattern": "moteskostnad.tornbergdev.se", "custom_domain": true }
+  ],
+  // Anges uttryckligen: när "routes" finns stänger wrangler annars av workers.dev-adressen,
+  // och förhandsadresserna för branches följer samma förval.
+  "workers_dev": true,
+  "preview_urls": true
 }
