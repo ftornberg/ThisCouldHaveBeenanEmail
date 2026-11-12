@@ -41,3 +41,9 @@ En webbsida kan inte köra kod medan mobilen är låst. Appen räknar därför i
 Workflowet i `.github/workflows/pages.yml` deployar sajten automatiskt vid push till `main`.
 Engångsinställning i repot: **Settings → Pages → Source: GitHub Actions**.
 Observera att Pages på ett privat repo kräver GitHub Pro/Team/Enterprise; på gratisplan måste repot vara publikt.
+
+## Cloudflare
+
+Sajten kan även publiceras som en Cloudflare Worker med statiska filer. `wrangler.jsonc` pekar ut repots rot och `.assetsignore` ser till att bara appen laddas upp.
+
+Koppla repot under **Workers & Pages → Create → Import a repository** med projektnamnet `moteskostnad`, tomt byggkommando och deploy-kommandot `npx wrangler deploy`. Namnet måste stämma med `name` i `wrangler.jsonc`. Varje push till `main` publiceras då på `moteskostnad.<kontonamn>.workers.dev`.

@@ -1,0 +1,9 @@
+// Cloudflare Workers: publicerar repots rot som en statisk sajt.
+// "name" måste vara samma som projektnamnet i Cloudflare-dashboarden.
+{
+  "name": "moteskostnad",
+  "compatibility_date": "2026-11-10",
+  "assets": {
+    "directory": "./"
+  }
+}

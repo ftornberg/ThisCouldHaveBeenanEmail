@@ -1,0 +1,13 @@
+# Filer som inte ska publiceras på Cloudflare. Bara själva appen laddas upp.
+.git
+.github
+.gitignore
+.nojekyll
+.assetsignore
+.wrangler
+node_modules
+README.md
+package.json
+package-lock.json
+serve.js
+wrangler.jsonc
