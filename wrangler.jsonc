@@ -15,5 +15,12 @@
   "workers_dev": true,
   "preview_urls": true,
   // Krävs av `wrangler preview`, som Cloudflare kör för varje branch. Blocket får vara tomt.
-  "previews": {}
+  "previews": {},
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "persist": true
+    }
+  }
 }
